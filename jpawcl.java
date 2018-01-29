@@ -11,7 +11,7 @@ import java.util.Scanner;
  * @author Peter Weston
  */
 class ParseNode {
-    String operand; // The operand or "identifier" or "literal".
+    String operator; // The operator or "identifier" or "literal".
     String data;   // The identifier or literal.
     ParseNode lhs; // Left hand tree.
     ParseNode rhs; // Right hand tree.
@@ -20,14 +20,14 @@ class ParseNode {
     ParseNode() {}
 
     ParseNode(String op, String data, ParseNode left, ParseNode right) {
-        this.operand = op;
+        this.operator = op;
         this.data = data;
         this.lhs = left;
         this.rhs = right;
     }
 
     public void set(String op, String data, ParseNode left, ParseNode right) {
-        this.operand = op;
+        this.operator = op;
         this.data = data;
         this.lhs = left;
         this.rhs = right;
@@ -35,25 +35,25 @@ class ParseNode {
 
     @Override
     public String toString() {
-        if(this.operand.equals("literal") || this.operand.equals("identifier"))
+        if(this.operator.equals("literal") || this.operator.equals("identifier"))
             return this.data;
-        if(this.operand.equals("neg"))
+        if(this.operator.equals("neg"))
             return "(neg "+this.lhs+")";
-        if(this.operand.equals("~"))
+        if(this.operator.equals("~"))
             return "(not "+this.lhs+")";
-        return "("+this.operand+" "+this.lhs+" "+this.rhs+")";
+        return "("+this.operator+" "+this.lhs+" "+this.rhs+")";
     }
 
     public SimpleList assemble(SourceHandler source) {
         // Check to see if this is a literal or identifier.
-        if(this.operand.equals("literal"))
+        if(this.operator.equals("literal"))
             return new SimpleList("mov rax, "+this.data);
-        if(this.operand.equals("identifier"))
+        if(this.operator.equals("identifier"))
             return new SimpleList("mov rax, ["+this.data+"]");
 
         // Assign the assembly language code.
         String op;
-        switch(this.operand) {
+        switch(this.operator) {
             case "+":
                 op = "add";
                 break;
@@ -88,17 +88,17 @@ class ParseNode {
                 jpawcl.abort(source, "Error while assembling expression.");
                 op = "";
         }
-        // If the operand is +, *, &, |, ^ and the left side is a identifier or
+        // If the operator is +, *, &, |, ^ and the left side is a identifier or
         //  literal and the right side is not, swap sides.
         // It's messy here, but better assembly.
-        switch(this.operand) {
+        switch(this.operator) {
             case "+":
             case "*":
             case "&":
             case "|":
             case "^":
-                if(lhs.operand.equals("literal") || lhs.operand.equals("identifier"))
-                    if(!"literal".equals(rhs.operand) && !"identifier".equals(rhs.operand)) {
+                if(lhs.operator.equals("literal") || lhs.operator.equals("identifier"))
+                    if(!"literal".equals(rhs.operator) && !"identifier".equals(rhs.operator)) {
                         ParseNode temp;
                         temp = this.rhs;
                         this.rhs = this.lhs;
@@ -123,14 +123,14 @@ class ParseNode {
         SimpleList right;
 
         // If the right side is an identifier or literal.
-        if("identifier".equals(this.rhs.operand)) {
+        if("identifier".equals(this.rhs.operator)) {
             if(op.equals("mod")){
                 right = new SimpleList("idiv ["+this.rhs.data+"]");
                 right.add("mov rax, rdx");
             } else
                 right = new SimpleList(op+" rax,["+this.rhs.data+"]");
         }
-        else if("literal".equals(this.rhs.operand))
+        else if("literal".equals(this.rhs.operator))
             if(op.equals("mod")) {
                 right = new SimpleList("idiv "+this.rhs.data);
                 right.add("mov rax, rdx");
@@ -160,18 +160,61 @@ class ParseNode {
     }
 }
 
+class SimpleList {
+    Object data;
+    SimpleList next;
+
+    SimpleList() {
+
+    }
+
+    SimpleList(Object o) {
+        this.data = o;
+    }
+
+    SimpleList(Object o, SimpleList list) {
+        this.data = o;
+        this.next = list;
+    }
+
+    public void add(Object o) {
+        if(this.next == null)
+            this.next = new SimpleList(o);
+        else
+            this.next.add(o);
+    }
+
+    public void add(SimpleList list) {
+        if(this.next == null)
+            this.next = list;
+        else
+            this.next.add(list);
+    }
+
+    public void print() {
+        SimpleList temp;
+        temp = this;
+        do {
+            System.out.println(temp.data);
+            if(temp.next == null)
+                break;
+            temp = temp.next;
+        } while(true);
+    }
+}
+
 public class jpawcl {
-    static SimpleList operands;
+    static SimpleList operators;
 
     public static void main(String[] args) {
         // Added in reverse order of precedence.
         // Brackets, unary minus, not, literals and identifiers are handled
         //   in the factor method.
-        operands = new SimpleList("|"); // Bitwise or.
-        operands.add("^"); // Bitwise xor.
-        operands.add("&"); // Bitwise and.
-        operands.add("+-");
-        operands.add("*/%");
+        operators = new SimpleList("|"); // Bitwise or.
+        operators.add("^"); // Bitwise xor.
+        operators.add("&"); // Bitwise and.
+        operators.add("+-");
+        operators.add("*/%");
 
         // Get the filename from args.
 
@@ -197,7 +240,7 @@ public class jpawcl {
             if(input.equals(""))
                 break;
             source = new SourceHandler(input);
-            node = expression(source, labels, operands);
+            node = expression(source, labels, operators);
             System.out.println("Parsed expression as: "+node);
             System.out.println("Unparsed remainder: "+source.rest());
             assembly = node.assemble(source);
@@ -237,7 +280,7 @@ public class jpawcl {
         if(source.peek == '(') {
             source.match("(");
             // Start from scratch. Brackets can contain full expressions.
-            node = expression(source, labels, operands);
+            node = expression(source, labels, operators);
             source.match(")");
         } else if (source.peek == '-') { // Unary minus.
             source.match("-");
