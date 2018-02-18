@@ -1,21 +1,18 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.io.File;
+import java.util.ArrayList;
 
-/**
- *
- * @author Peter Weston
- */
+
 public class SourceHandler {
+    ArrayList<String> sourceCode;
     String currentLine; // Contents of the current line.
     int cursor = 0; // The index of the cursor on the current lineNumber.
-    int lineNumber = 0;   // The current lineNumber number. Used to print out errors.
+    int lineNumber = 0;   // The current lineNumber number. The line number is
+                          // the sourceCode index + 1.
+    int totalLines = 0;
     char peek;      // The char at the cursor.
     public static final String INTEGER = "^[0-9]+";
     public static final String IDENTIFIER = "^[a-zA-Z][a-zA-Z0-9_]*";
@@ -25,6 +22,7 @@ public class SourceHandler {
     SourceHandler() {
         integer = Pattern.compile(INTEGER);
         identifier = Pattern.compile(IDENTIFIER);
+        this.sourceCode = new ArrayList<String>();
     }
 
     SourceHandler(String s) {
@@ -32,6 +30,28 @@ public class SourceHandler {
         currentLine = s;
     }
 
+    // Add a new line to the source code.
+    // This is for loading files.
+    public void addLine(String s) {
+        sourceCode.add(s);
+        this.totalLines++;
+    }
+
+    // Set the current line to the next available line of code.
+    // Skip blank lines.
+    // Return false if there is no more lines left.
+    public boolean nextLine() {
+        while(this.lineNumber <= this.totalLines) {
+            this.lineNumber++;
+            this.cursor = 0;
+            this.currentLine = sourceCode.get(lineNumber-1);
+            if(!this.currentLine.equals("")) {
+                this.depad(); // Set the cursor to the first character and set peek.
+                return true;
+            }
+        }
+        return false;
+    }
     // Match the string at cursor.
     // Return true if it matches. Update the cursor.
     public void match(String s) {

@@ -4,7 +4,9 @@
  * and open the template in the editor.
  */
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Scanner;
+import java.io.File;
 
 /**
  *
@@ -217,8 +219,33 @@ public class jpawcl {
         operators.add("*/%");
 
         // Get the filename from args.
+        if(args.length == 0) {
+            System.out.println("Please specify which file to compile.");
+            System.exit(1);
+        }
 
         // Load the file into the source handler.
+        SourceHandler source = new SourceHandler();
+
+        try {
+            File diskFile = new File(args[0]);
+            if(!diskFile.exists()) {
+                System.out.println("Unable to open file: "+args[0]);
+                System.exit(1);
+            }
+
+            Scanner input = new Scanner(diskFile);
+
+            // Read the file.
+            while(input.hasNextLine()) {
+                source.addLine(input.nextLine());
+            }
+
+            input.close();
+        } catch(Exception ex) {
+            ex.printStackTrace();
+            System.exit(1);
+        }
 
         // Init
         // Set up expression node, code handler.
@@ -227,7 +254,6 @@ public class jpawcl {
         SimpleList assembly;
         Scanner userInput = new Scanner(System.in);
         String input = new String();
-        SourceHandler source;
         LabelHandler labels;
         labels = new LabelHandler("global");
         labels.addLabel("a");

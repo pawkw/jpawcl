@@ -1,15 +1,8 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+
 
 import java.util.HashMap;
 
-/**
- *
- * @author Peter Weston
- */
+
 public class LabelHandler {
     static int counter; // All label handlers share the same counter.
     LabelHandler parent; // Allows you to look at the parent scope.

@@ -1,6 +1,6 @@
 # jpawcl
 
-This is currently a very rudimentary expression parser. It asks the user to input an expression on the command line and then prints out an s-expression and an Intel compatible assembly language "compile".
+This is currently a very rudimentary expression parser. It asks the user to input an expression on the command line and then prints out an s-expression and a NASM/Yasm syntax compatible assembly language "compile".
 
 Anything the expression parser does not understand is left unparsed to be picked up by parent stages of the compiler (which don't exist yet).
 
